@@ -1,0 +1,349 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,maxiumum-scale=1,user-scaleable=no">
+    <title>Mapping Every Place At Once</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .map-overlay {
+            font:
+            12px/20px 'Helvetica Neue',
+            Arial,
+            Helvetica,
+            sans-serif;
+            position: absolute;
+            width: 200px;
+            top: 0;
+            left: 0;
+            padding: 10px;
+        }
+
+        h2 {
+            margin: 10px;
+            font-size: 16px;
+        }
+        
+        h3 {
+            margin: 10px;
+            font-size: 14px;
+        }
+
+        p {
+            margin: 10px;
+        }
+ 
+        .inset-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #fff;
+            margin-right: 40px;
+            font-family: Arial, sans-serif;
+            overflow: auto;
+            border-radius: 3px;
+        }
+
+        #inset-features {
+            top: 0;
+            height: 200px;
+            margin-top: 20px;
+            width: 250px;
+        }
+        
+        .map-overlay .map-overlay-inner {
+            background-color: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .map-overlay-inner fieldset {
+            display: flex;
+            justify-content: space-between;
+            border: none;
+        }
+        
+        .map-overlay-inner label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .map-overlay-inner .select-fieldset {
+            display: block;
+        }
+        
+        .map-overlay-inner .select-fieldset label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .map-overlay-inner .select-fieldset select {
+            width: 100%;
+        }
+        #features {
+            top: 0;
+            height: 100px;
+            margin-top: 20px;
+            width: 250px;
+        }
+
+        .legend {
+            background-color: #fff;
+            background: linear-gradient(rgba(255,237,160,1) 0%, rgba(254,178,76,1) 50%, rgba(240,59,32,1) 100%);
+            width: 20px;
+            height: 200px;
+            border-radius: 3px;
+            bottom: 30px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            padding: 10px;
+            align-items: center;
+            position: absolute;
+            left: 10px;
+            top: 40%;
+        }
+        
+        .legend h4 {
+            margin: 0 0 14px;
+        }
+
+        .legend div span {
+            border-radius: 50%;
+            display: inline-block;
+            height: 10px;
+            margin-right: 5px;
+            width: 10px;
+        }
+
+        .mapboxgl-popup {
+            max-width: 400px;
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="inset-overlay" id="inset-features">
+        <div id="pd"><p>Hover over a city</p></div>
+    </div>
+    <div class="map-overlay top">
+        <div class="map-overlay-inner">
+            <fieldset class="select-fieldset">
+                <label>Selected Audio Feature</label>
+                <select id="audioFeature" name="audioFeature">
+                    <option value="Acousticness" selected="">Acousticness</option>
+                    <option value="Danceability">Danceability</option>
+                    <option value="Energy">Energy</option>
+                    <option value="Instrumentalness">Instrumentalness</option>
+                    <option value="Liveness">Liveness</option>
+                    <option value="Loudness">Loudness</option>
+                    <option value="Mode">Mode</option>
+                    <option value="Speechiness">Speechiness</option>
+                    <option value="Tempo">Tempo</option>
+                    <option value="Valence">Valence</option>
+                </select>
+            </fieldset>
+        </div>
+        <div class="map-overlay-inner" id="description">
+            A confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.
+        </div>
+    </div>
+
+<!--     <div id="feature-legend" class = "legend">
+        <div><span style></span></div>
+        <div><h4><span style="background-color: #ffeda0"></span>0.800</h4></div>
+        <div><h4><span style="background-color: #feb24c"></span>0.432</h4></div>
+        <div><h4><span style="background-color: #f03b20"></span>0.785</h4></div>
+    </div> -->
+
+    <div class="legend"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXRqYW0iLCJhIjoiY2xvN3F5b2NiMDdnbDJtbzNrZm84MTFyYSJ9.ZTrBgi6Yek6OWQ_MmaEJgg';
+            const map = new mapboxgl.Map({
+            container: 'map', // container ID
+//            style: 'mapbox://styles/etjam/clpufwjjx00v901qu7l05g7t8',
+            style : 'mapbox://styles/etjam/clpunjbnr00wx01p769613oo2',
+            center: [-100, 38],
+            zoom: 4 // starting zoom
+        });
+
+        const acousticness = {
+            name: 'Acousticness',
+            fieldName: 'avg_acousticness',
+            fieldMin: 0.0800297999999999,
+            fieldMid: 0.432,
+            fieldMax: 0.7836790999999999,
+            description: 'A confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.',
+        };
+
+        const danceability = {
+            name: 'Danceability',
+            fieldName: 'avg_danceability',
+            fieldMin: 0.3659140000000001,
+            fieldMid: 0.612,
+            fieldMax: 0.85899,
+            description: 'Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.',
+        };
+
+        const energy = {
+            name: 'Energy',
+            fieldName: 'avg_energy',
+            fieldMin: 0.2571263,
+            fieldMid: 0.563,
+            fieldMax: 0.8691200000000001,
+            description: 'Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy.',
+        };
+
+        const instrumentalness = {
+            name: 'Instrumentalness',
+            fieldName: 'avg_instrumentalness',
+            fieldMin: 0.000015528199999999998,
+            fieldMid: 0.387,
+            fieldMax: 0.774752251,
+            description: 'Predicts whether a track contains no vocals. "Ooh" and "aah" sounds are treated as instrumental in this context. Rap or spoken word tracks are clearly "vocal". The closer the instrumentalness value is to 1.0, the greater likelihood the track contains no vocal content. Values above 0.5 are intended to represent instrumental tracks, but confidence is higher as the value approaches 1.0.',
+        };
+
+        const liveness = {
+            name: 'Liveness',
+            fieldName: 'avg_liveness',
+            fieldMin: 0.13285,
+            fieldMid: 0.273,
+            fieldMax: 0.4137039999999999,
+            description: 'Detects the presence of an audience in the recording. Higher liveness values represent an increased probability that the track was performed live. A value above 0.8 provides strong likelihood that the track is live.',
+        };
+
+        const loudness = {
+            name: 'Loudness',
+            fieldName: 'avg_loudness',
+            fieldMin: -13.51081,
+            fieldMid: -8.04,
+            fieldMax: -2.57534,
+            description: 'The overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typically range between -60 and 0 db.',
+        };
+
+        const mode = {
+            name: 'Mode',
+            fieldName: 'avg_mode',
+            fieldMin: 0.25,
+            fieldMid: 0.595,
+            fieldMax: 0.94,
+            description: 'Mode indicates the modality (major or minor) of a track, the type of scale from which its melodic content is derived. Major is represented by 1 and minor is 0.',
+        };
+
+        const speechiness = {
+            name: 'Speechiness',
+            fieldName: 'avg_speechiness',
+            fieldMin: 0.035509,
+            fieldMid: 0.209,
+            fieldMax: 0.382347,
+            description: 'Speechiness detects the presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, either in sections or layered, including such cases as rap music. Values below 0.33 most likely represent music and other non-speech-like tracks.',
+        };
+
+        const tempo = {
+            name: 'Tempo',
+            fieldName: 'avg_tempo',
+            fieldMin: 105.89983,
+            fieldMid: 124.01,
+            fieldMax: 142.12849,
+            description: 'The overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration.',
+        };
+
+        const valence = {
+            name: 'Valence',
+            fieldName: 'avg_valence',
+            fieldMin: 0.2358569999999999,
+            fieldMid: 0.55,
+            fieldMax: 0.8644199999999999,
+            description: 'A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).',
+        };
+
+        const layers = [acousticness, danceability, energy, instrumentalness, liveness, loudness, mode, speechiness, tempo, valence];
+        const featureLayers = layers.slice(1);
+        // const FeatureIds = ['Acousticness','Danceability','Energy','Instrumentalness','Liveness','Loudness','Mode','Speechiness','Tempo','Valence'];
+        const featureNames = featureLayers.map(a => a.name);
+        const AllIds = layers.map(a => a.name);
+        const AllDescs = layers.map(a => a.description);
+        // const AllIds = ['Default','Acousticness','Danceability','Energy','Instrumentalness','Liveness','Loudness','Mode','Speechiness','Tempo','Valence'];
+
+/*         map.on('load', () => {
+            for (const id of FeatureIds) {
+                map.setLayoutProperty(id, 'visibility', 'none');
+                }
+            }); */
+        let currentFeatureName = document.getElementById('audioFeature').value
+        let currentFeatureData = layers.find(o => o.name === currentFeatureName);
+        let currentFeatureField = currentFeatureData.fieldName
+        let currentFeatureMin = currentFeatureData.fieldMin
+        let currentFeatureMid = currentFeatureData.fieldMid
+        let currentFeatureMax = currentFeatureData.fieldMax
+        let currentFeatureDesc = currentFeatureData.description
+
+        map.on('style.load', () => {
+            document
+                .getElementById('audioFeature')
+                .addEventListener('change', function () {
+                    currentFeatureName = this.value
+                    currentFeatureData = layers.find(o => o.name === currentFeatureName);
+                    currentFeatureField = currentFeatureData.fieldName
+                    currentFeatureMin = currentFeatureData.fieldMin
+                    currentFeatureMid = currentFeatureData.fieldMid
+                    currentFeatureMax = currentFeatureData.fieldMax
+                    currentFeatureDesc = currentFeatureData.description
+                    map.setPaintProperty('city_polygon_data','fill-color',[
+                                                                        "interpolate",
+                                                                        ["linear"],
+                                                                        ["get", currentFeatureField],
+                                                                        currentFeatureMin,
+                                                                        "#ffeda0",
+                                                                        currentFeatureMid,
+                                                                        "#feb24c",
+                                                                        currentFeatureMax,
+                                                                        "#f03b20"
+                                                                    ]);
+                    document.getElementById("description").innerHTML = currentFeatureDesc;
+                    //document.createElement('div');
+                
+            });
+        });
+
+        map.on('mousemove', (event) => {
+            const cities = map.queryRenderedFeatures(event.point, {
+                layers: ['city_polygon_data']
+            });
+            document.getElementById('pd').innerHTML = cities.length
+                ? `<h2>${cities[0].properties.cityname}</h2><h3>${cities[0].properties.countryname}</h3>`
+            : `<p>Hover over a city</p>`;
+        });
+
+        map.on('click', 'cities', (e) => {
+            map.flyTo({
+                center: e.features[0].geometry.coordinates
+            });
+            const coordinates = e.features[0].geometry.coordinates.slice();
+            const cityname = e.features[0].properties.cityname
+            const countryname = e.features[0].properties.countryname
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML('<b>${cityname}</b>')
+                .addTo(map);
+        });
+
+        map.on('mouseenter', 'cities', () => {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+
+        map.on('mouseleave', 'cities', () => {
+            map.getCanvas().style.cursor = '';
+        });
+
+        map.addControl(new mapboxgl.NavigationControl());
+
+    </script>
+</body>
+</html>

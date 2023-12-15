@@ -1,0 +1,95 @@
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+.audio-feature-selector {
+    font:
+    12px/20px 'Helvetica Neue',
+    Arial,
+    Helvetica,
+    sans-serif;
+    position: relative;
+    width: 250px;
+    top: 0;
+    left: 0;
+    padding: 10px;
+    z-index: 1000;
+}
+
+.audio-feature-selector .audio-feature-selector-inner {
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.audio-feature-selector-inner fieldset {
+    display: flex;
+    justify-content: space-between;
+    border: none;
+}
+
+.audio-feature-selector-inner label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.audio-feature-selector-inner .select-fieldset {
+    display: block;
+}
+
+.audio-feature-selector-inner .select-fieldset label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.audio-feature-selector-inner .select-fieldset select {
+    width: 100%;
+}
+
+#features {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50%;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.8);
+    }
+
+.cityInfo {
+    position: absolute;
+    top: 0;
+    right: 0; 
+    padding: 15px;
+    width: 250px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+
+.cityInfo .colorbox {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    background-color: #ccc;
+    /* left: 5px;
+    top: 5px; */
+    border: 2px solid black;
+}
+
+.cityInfo h4 {
+    margin: 0 0 5px;
+    color: #777;
+    text-align: center;
+    font-size: 16px;
+}
+
+.cityInfo h3 {
+    color:rgba(0, 0, 0, 0.8);
+    text-align: center;
+    font-size: 16px
+}
+

@@ -142,18 +142,6 @@
     let currentFeatureMax = currentFeatureData.fieldMax;
     let currentFeatureDesc = currentFeatureData.description;
 
-    const displayName = document.getElementById("City Name");
-    const displayAcousticness = document.getElementById("Acousticness");
-    const displayDanceability = document.getElementById("Danceability");
-    const displayEnergy = document.getElementById("Energy");
-    const displayInstrumentalness = document.getElementById("Instrumentalness");
-    const displayLiveness = document.getElementById("Liveness");
-    const displayLoudness = document.getElementById("Loudness");
-    const displayMode = document.getElementById("Mode");
-    const displaySpeechiness = document.getElementById("Speechiness");
-    const displayTempo = document.getElementById("Tempo");
-    const displayValence = document.getElementById("Valence");
-
     let cityInfo = L.control();
 
     cityInfo.onAdd = function (map) {
@@ -163,7 +151,7 @@
     }
 
     cityInfo.update = function (props) {
-        this._div.innerHTML = '<h4>Click on a city to see its average audio features</h4>' + (props ?
+        this._div.innerHTML = (props ?
             '<h3><b>' + props.cityname + '<br>' + props.countryname + 
             '<table>' + 
             '<tr><td><b>Acousticness: </b></td><td>' + props.avg_acousticness.toPrecision(4) + '</td><td><div class="colorbox" style="background-color: ' + getColor(props.avg_acousticness,acousticness.fieldArray) + ';"></td></tr>' +
@@ -177,19 +165,44 @@
             '<tr><td><b>Tempo: </b></td><td>' + props.avg_tempo.toPrecision(4) + '</td><td><div class="colorbox" style="background-color: ' + getColor(props.avg_tempo,tempo.fieldArray) + ';"></td></tr>' +
             '<tr><td><b>Valence: </b></td><td>' + props.avg_valence.toPrecision(4) + '</td><td><div class="colorbox" style="background-color: ' + getColor(props.avg_valence,valence.fieldArray) + ';"></td></tr>' +
             '</table>'
-            : 'Click on a city');
+            : '<h4>Click on a city to see its average audio features</h4>');
     };
     
     cityInfo.addTo(map);
 
+    let legend = L.control({position: 'bottomleft'});
+
+    function addLegend() {
+        legend.remove()
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML = '<b>Average<br>' + currentFeatureName + '</b><br>'
+            for (var i = 0; i < currentFeatureArray.length; i++) {
+                div.innerHTML +=
+                    '<i style="background:' + getColor(currentFeatureArray[i], currentFeatureArray) + '"></i> ' +
+                    currentFeatureArray[i].toPrecision(4) + '<br>';
+            }
+            return div;
+        };
+        legend.addTo(map);
+    }
 
     function getColor(value, valueArray) {
         let colors = chroma.scale('YlOrRd').classes(valueArray);
         return colors(value).hex();
     }
 
-    function updateColors(field) {
+    function updatePolygonColors(field) {
         Polygons.setStyle(function (feature) {
+            var value = feature.properties[field];
+            return {
+                fillColor: getColor(value,currentFeatureArray)
+            };
+        });
+    };
+
+    function updatePointColors(field) {
+        Points.setStyle(function (feature) {
             var value = feature.properties[field];
             return {
                 fillColor: getColor(value,currentFeatureArray)
@@ -205,11 +218,13 @@
             dashArray: '',
             fillOpacity: 0.7
         });
+        layer.bindTooltip(layer.feature.properties.cityname).openTooltip(); 
         layer.bringToFront();
     };
 
     function mouseoutFeature(e) {
         Polygons.resetStyle(e.target);
+        e.target.bringToBack();
     };
 
     function clickFeature(e){
@@ -239,13 +254,24 @@
 
     let Polygons = L.geoJSON(polygondata, {
         style: initStyle,
-        onEachFeature: onEachFeature
+        onEachFeature: onEachFeature,
         }).addTo(map);
+
+    addLegend();
 
     let Points = L.geoJSON(pointdata, {
         onEachFeature: function(feature, layer){
             layer.bindPopup(feature.properties.cityname);
-        }
+        },
+        pointToLayer: (feature, latlng) => {
+            return new L.circleMarker(latlng,{
+                radius: 5,
+                fillColor: getColor(feature.properties[currentFeatureField],currentFeatureArray),
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.7
+            });
+        },
     }).addTo(map);
 
     featureSelector = function () {
@@ -256,11 +282,13 @@
                 currentFeatureArray = currentFeatureData.fieldArray;
                 currentFeatureDesc = currentFeatureData.description;
                 document.getElementById("description").innerHTML = currentFeatureDesc;
-                updateColors(currentFeatureField);
+                updatePolygonColors(currentFeatureField);
+                updatePointColors(currentFeatureField);
+                addLegend();
             });
     };
 
-    map.whenReady(featureSelector)
+    map.whenReady(featureSelector);
 
 </script>
 

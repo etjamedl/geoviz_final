@@ -11,6 +11,7 @@
     crossorigin=""></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
     <link rel="stylesheet" href="css/style.css"/>
     <script type="text/javascript" src="data/polygons.js"></script>
     <script type="text/javascript" src="data/points.js"></script>
@@ -18,8 +19,8 @@
 <body>
 <div id="map"></div>
 
-<div class="audio-feature-selector">
-    <div class="audio-feature-selector-inner">
+<div class="wrapper">
+    <div class="audio-feature-selector">
         <fieldset class="select-fieldset">
             <label>Selected Audio Feature</label>
             <select id="audioFeature" name="audioFeature">
@@ -36,9 +37,13 @@
             </select>
         </fieldset>
     </div>
-    <div class="audio-feature-selector-inner" id="description">
+    <div class="feature-description" id="description">
         A confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.
     </div>
+    <div class="toptick" id="toptick"></div>
+    <div class="bottomtick" id="bottomtick"></div>
+    <div class="colorbar" id="colorbar"></div>
+    <div class="histogram" id="histogram"></div>
 </div>
 
 <script>
@@ -53,7 +58,10 @@
     const acousticness = {
         name: 'Acousticness',
         fieldName: 'avg_acousticness',
-        fieldArray: [0.09029631099999999,0.17086869999999998,0.2106974905,0.24556899125,0.27272476,0.306862865,0.340466862,0.402444375,0.748068],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0,1.0],
+//        fieldArray: [0.09029631099999999,0.17086869999999998,0.2106974905,0.24556899125,0.27272476,0.306862865,0.340466862,0.402444375,0.748068],
         fieldUnit: '',
         description: 'A confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.',
     };
@@ -61,7 +69,10 @@
     const danceability = {
         name: 'Danceability',
         fieldName: 'avg_danceability',
-        fieldArray: [0.393303,0.60315625,0.6320224999999999,0.6584462499999998,0.6724699999999999,0.6873699999999999,0.7012099999999999,0.72304625,0.86045],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0,1.0],
+//        fieldArray: [0.393303,0.60315625,0.6320224999999999,0.6584462499999998,0.6724699999999999,0.6873699999999999,0.7012099999999999,0.72304625,0.86045],
         fieldUnit: '',
         description: 'Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable.',
     };
@@ -69,7 +80,10 @@
     const energy = {
         name: 'Energy',
         fieldName: 'avg_energy',
-        fieldArray: [0.2934203,0.56969573125,0.612825,0.63329625,0.6572545000000001,0.681915,0.7042175000000002,0.73625375,0.8666399999999999],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0,1.0],
+        // fieldArray: [0.2934203,0.56969573125,0.612825,0.63329625,0.6572545000000001,0.681915,0.7042175000000002,0.73625375,0.8666399999999999],
         fieldUnit: '',
         description: 'Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy.',
     };
@@ -77,7 +91,10 @@
     const instrumentalness = {
         name: 'Instrumentalness',
         fieldName: 'avg_instrumentalness',
-        fieldArray: [0,0.0021194934375,0.005946103874999999,0.010831786437500001,0.015396516950000001,0.0216754773125,0.033933643175,0.0621054735125,0.33520397449999995],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0,1.0],
+        // fieldArray: [0,0.0021194934375,0.005946103874999999,0.010831786437500001,0.015396516950000001,0.0216754773125,0.033933643175,0.0621054735125,0.33520397449999995],
         fieldUnit: '',
         description: 'Predicts whether a track contains no vocals. "Ooh" and "aah" sounds are treated as instrumental in this context. Rap or spoken word tracks are clearly "vocal". The closer the instrumentalness value is to 1.0, the greater likelihood the track contains no vocal content. Values above 0.5 are intended to represent instrumental tracks, but confidence is higher as the value approaches 1.0.',
     };
@@ -85,7 +102,10 @@
     const liveness = {
         name: 'Liveness',
         fieldName: 'avg_liveness',
-        fieldArray: [0.13483900000000001,0.15885824999999998,0.1661165,0.172953625,0.17939149999999998,0.18746875000000002,0.19803,0.217973,0.42180899999999993],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0,1.0],
+        // fieldArray: [0.13483900000000001,0.15885824999999998,0.1661165,0.172953625,0.17939149999999998,0.18746875000000002,0.19803,0.217973,0.42180899999999993],
         fieldUnit: '',
         description: 'Detects the presence of an audience in the recording. Higher liveness values represent an increased probability that the track was performed live. A value above 0.8 provides strong likelihood that the track is live.',
     };
@@ -93,7 +113,10 @@
     const loudness = {
         name: 'Loudness',
         fieldName: 'avg_loudness',
-        fieldArray: [-12.905050000000001,-8.446027500000001,-7.9349225,-7.565128749999998,-7.2131750000000014,-6.934904999999999,-6.604502499999999,-6.1622425,-2.8862200000000002],
+        fieldMin: -16,
+        fieldMax: 0,
+        fieldArray: [-16, 0],
+        // fieldArray: [-12.905050000000001,-8.446027500000001,-7.9349225,-7.565128749999998,-7.2131750000000014,-6.934904999999999,-6.604502499999999,-6.1622425,-2.8862200000000002],
         fieldUnit: 'dB',
         description: 'The overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typically range between -60 and 0 db.',
     };
@@ -101,7 +124,10 @@
     const mode = {
         name: 'Mode',
         fieldName: 'avg_mode',
-        fieldArray: [0.25,0.46,0.52,0.58,0.62,0.66,0.71,0.78,0.95],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0, 1.0],
+        // fieldArray: [0.25,0.46,0.52,0.58,0.62,0.66,0.71,0.78,0.95],
         fieldUnit: '',
         description: 'Mode indicates the modality (major or minor) of a track, the type of scale from which its melodic content is derived. Major is represented by 1 and minor is 0.',
     };
@@ -109,7 +135,10 @@
     const speechiness = {
         name: 'Speechiness',
         fieldName: 'avg_speechiness',
-        fieldArray: [0.035779,0.063076,0.07724324999999999,0.08997325,0.10641850000000003,0.135661,0.16240575,0.21241375,0.361503],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0, 1.0],
+        // fieldArray: [0.035779,0.063076,0.07724324999999999,0.08997325,0.10641850000000003,0.135661,0.16240575,0.21241375,0.361503],
         fieldUnit: '',
         description: 'Speechiness detects the presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, either in sections or layered, including such cases as rap music. Values below 0.33 most likely represent music and other non-speech-like tracks.',
     };
@@ -117,7 +146,10 @@
     const tempo = {
         name: 'Tempo',
         fieldName: 'avg_tempo',
-        fieldArray: [106.20380000000002,115.85775625,118.732285,120.46288125000001,122.729035,124.58795500000001,126.687545,129.34651374999999,142.42399],
+        fieldMin: 100,
+        fieldMax: 160,
+        fieldArray: [100, 160],
+        // fieldArray: [106.20380000000002,115.85775625,118.732285,120.46288125000001,122.729035,124.58795500000001,126.687545,129.34651374999999,142.42399],
         fieldUnit: 'BPM',
         description: 'The overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration.',
     };
@@ -125,7 +157,10 @@
     const valence = {
         name: 'Valence',
         fieldName: 'avg_valence',
-        fieldArray: [0.28055199999999997,0.48004274999999996,0.5095875000000001,0.54345625,0.57457,0.60947825,0.67645,0.7565525,0.8704599999999998],
+        fieldMin: 0.0,
+        fieldMax: 1.0,
+        fieldArray: [0.0, 1.0],
+        // fieldArray: [0.28055199999999997,0.48004274999999996,0.5095875000000001,0.54345625,0.57457,0.60947825,0.67645,0.7565525,0.8704599999999998],
         fieldUnit: '',
         description: 'A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).',
     };
@@ -136,9 +171,8 @@
     let currentFeatureData = layers.find(o => o.name === currentFeatureName);
     let currentFeatureField = currentFeatureData.fieldName;
     let currentFeatureArray = currentFeatureData.fieldArray;
-    let currentFeatureColors = chroma.scale('YlOrRd').classes(currentFeatureArray);
+    let currentFeatureColors = chroma.scale('YlOrRd').domain(currentFeatureArray);
     let currentFeatureMin = currentFeatureData.fieldMin;
-    let currentFeatureMed = currentFeatureData.fieldMed;
     let currentFeatureMax = currentFeatureData.fieldMax;
     let currentFeatureDesc = currentFeatureData.description;
 
@@ -149,6 +183,14 @@
         this.update();
         return this._div;
     }
+
+    // let songInfo = L.control();
+
+    // songInfo.onAdd = function(map) {
+    //     this._div = L.DomUtil.create('div', 'cityInfo');
+    //     this.update();
+    //     return this._div;
+    // }
 
     cityInfo.update = function (props) {
         this._div.innerHTML = (props ?
@@ -164,31 +206,47 @@
             '<tr><td><b>Speechiness: </b></td><td>' + props.avg_speechiness.toPrecision(4) + '</td><td><div class="colorbox" style="background-color: ' + getColor(props.avg_speechiness,speechiness.fieldArray) + ';"></td></tr>' +
             '<tr><td><b>Tempo: </b></td><td>' + props.avg_tempo.toPrecision(4) + '</td><td><div class="colorbox" style="background-color: ' + getColor(props.avg_tempo,tempo.fieldArray) + ';"></td></tr>' +
             '<tr><td><b>Valence: </b></td><td>' + props.avg_valence.toPrecision(4) + '</td><td><div class="colorbox" style="background-color: ' + getColor(props.avg_valence,valence.fieldArray) + ';"></td></tr>' +
-            '</table>'
+            '</table>' +
+            'Click to listen to a distinctive track of ' + props.cityname
             : '<h4>Click on a city to see its average audio features</h4>');
     };
     
     cityInfo.addTo(map);
 
-    let legend = L.control({position: 'bottomleft'});
+    const infoButton = L.Control.extend({
+        options: {
+            position: 'bottomright',
+        },
+        
+        onAdd: function (map) {
+            const btn = L.DomUtil.create("button");
+            btn.title = "Info Button";
+            btn.textContent = "ⓘ"
+            btn.className = "info"
+            btn.setAttribute(
+                "style",
+                "background-color: transparent; width: 30px; height: 30px; border: none; display: flex; cursor: pointer; justify-content: center; font-size: 2rem;"
+            );
 
-    function addLegend() {
-        legend.remove()
-        legend.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'info legend');
-            div.innerHTML = '<b>Average<br>' + currentFeatureName + '</b><br>'
-            for (var i = 0; i < currentFeatureArray.length; i++) {
-                div.innerHTML +=
-                    '<i style="background:' + getColor(currentFeatureArray[i], currentFeatureArray) + '"></i> ' +
-                    currentFeatureArray[i].toPrecision(4) + '<br>';
-            }
-            return div;
-        };
-        legend.addTo(map);
-    }
+            btn.onmouseover = function () {
+                this.style.transform = "scale(1.3)";
+            };
+
+            btn.onmouseout = function () {
+                this.style.transform = "scale(1)";
+            };
+
+            btn.onclick = function () {
+
+            };
+            return btn;
+        },
+    });
+
+    map.addControl(new infoButton());
 
     function getColor(value, valueArray) {
-        let colors = chroma.scale('YlOrRd').classes(valueArray);
+        let colors = chroma.scale('YlOrRd').domain(valueArray);
         return colors(value).hex();
     }
 
@@ -212,24 +270,31 @@
 
     function mouseoverFeature(e) {
         var layer = e.target;
+        let lat = parseFloat(layer.feature.properties.Y);
+        let lng = parseFloat(layer.feature.properties.X);
+        let latlng = [lat,lng];
         layer.setStyle({
             weight: 5,
             color: '#666',
             dashArray: '',
             fillOpacity: 0.7
         });
-        layer.bindTooltip(layer.feature.properties.cityname).openTooltip(); 
+        layer.bindTooltip(layer.feature.properties.cityname).openTooltip(latlng); 
         layer.bringToFront();
     };
 
     function mouseoutFeature(e) {
         Polygons.resetStyle(e.target);
         e.target.bringToBack();
+        e.target.unbindTooltip();
     };
 
     function clickFeature(e){
         var layer = e.target
-        map.panInsideBounds(e.target.getBounds());
+        let lat = parseFloat(layer.feature.properties.Y);
+        let lng = parseFloat(layer.feature.properties.X);
+        let latlng = [lat,lng];
+        map.panTo(latlng);
         cityInfo.update(layer.feature.properties);
     };
 
@@ -257,12 +322,7 @@
         onEachFeature: onEachFeature,
         }).addTo(map);
 
-    addLegend();
-
     let Points = L.geoJSON(pointdata, {
-        onEachFeature: function(feature, layer){
-            layer.bindPopup(feature.properties.cityname);
-        },
         pointToLayer: (feature, latlng) => {
             return new L.circleMarker(latlng,{
                 radius: 5,
@@ -274,21 +334,77 @@
         },
     }).addTo(map);
 
+    get_feature_data = function () {
+        for (audiofeature in layers) {
+            layers[audiofeature].data = []
+        };
+        var polygons = Polygons._layers
+        for (polygon in polygons) {
+            var attributeData = polygons[polygon].feature.properties
+            for (audiofeature in layers) {
+                layers[audiofeature].data.push(attributeData[layers[audiofeature].fieldName])
+            };
+        };
+        for (audiofeature in layers) {
+            layers[audiofeature].data = layers[audiofeature].data.sort()
+        };
+    };
+
+    make_histogram = function(audiofeature) {
+        var histogram = document.getElementById('histogram');
+        var data = [{y: currentFeatureData.data,
+            type: 'histogram',
+            histnorm: 'probability',
+            name: currentFeatureData.name,
+            opacity: 0.7,
+        }];
+        var layout = {margin: {
+                t: 0,
+                b: 0,
+                r: 0,
+                l: 0},
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "rgba(0,0,0,0)",
+            showlegend: false,
+            xaxis: {visible: false,},
+            yaxis: {
+                range: [currentFeatureData.fieldMin,currentFeatureData.fieldMax],
+                visible: false
+            },
+        };
+        Plotly.newPlot(histogram,data,layout,{staticPlot:true});
+        document.getElementById('toptick').innerHTML = currentFeatureData.fieldMax;
+        document.getElementById('bottomtick').innerHTML = currentFeatureData.fieldMin;
+    };
+
     featureSelector = function () {
         document.getElementById('audioFeature').addEventListener('change', function () {
                 currentFeatureName = this.value;
                 currentFeatureData = layers.find(o => o.name === currentFeatureName);
                 currentFeatureField = currentFeatureData.fieldName;
+                currentFeatureMin = currentFeatureData.fieldMin;
+                currentFeatureMax = currentFeatureData.fieldMax;
                 currentFeatureArray = currentFeatureData.fieldArray;
                 currentFeatureDesc = currentFeatureData.description;
                 document.getElementById("description").innerHTML = currentFeatureDesc;
                 updatePolygonColors(currentFeatureField);
                 updatePointColors(currentFeatureField);
-                addLegend();
+                make_histogram(currentFeatureData);
             });
     };
 
+    function previewAudio() {
+        document.getElementById('audiopreview').addEventListener('click', function () {
+
+        });
+    };
+
+    map.whenReady(get_feature_data);
+    map.whenReady(make_histogram);
     map.whenReady(featureSelector);
+
+    
+
 
 </script>
 
